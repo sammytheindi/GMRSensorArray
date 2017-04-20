@@ -1,0 +1,106 @@
+// Set Variable Names
+int S0 = 11;
+int S1 = 12;
+int S2 = 13;
+int OUT = A11;
+int E = 53;
+int output;
+
+// Create array of size 4 to allow storage of values
+int valstore[10];
+int finalval[5];
+
+char receivedChar;
+boolean newData = false;
+
+void setup() {
+  // Initialize Pins
+  pinMode(OUT, INPUT);
+  pinMode(S0, OUTPUT);
+  pinMode(S1, OUTPUT);
+  pinMode(S2, OUTPUT);
+  pinMode(E, OUTPUT);
+  pinMode(A0, INPUT);
+  pinMode(A1, INPUT);
+  
+  // Set Baud Rate to 9600
+  Serial.begin(9600);
+}
+
+void loop() {
+  digitalWrite(E, HIGH);
+  digitalWrite(S0, LOW);
+  digitalWrite(S1, LOW);
+  digitalWrite(S2, LOW);
+
+  // Start of loop if button is being used, to fill in later
+
+  // Reading Y0 
+  digitalWrite(E, LOW);
+  valstore[0] = analogRead(OUT);
+
+  // Reading Y1
+  digitalWrite(S0, HIGH);
+  valstore[1] = analogRead(OUT);
+
+  // Reading Y3
+  digitalWrite(S1, HIGH);
+  valstore[3] = analogRead(OUT);
+
+  // Reading Y2
+  digitalWrite(S0, LOW);
+  valstore[2] = analogRead(OUT);
+
+  // Reading Y4
+  digitalWrite(S1, LOW);
+  digitalWrite(S2, HIGH);
+  valstore[4] = analogRead(OUT);
+
+  // Reading Y5
+  digitalWrite(S0, HIGH);
+  valstore[5] = analogRead(OUT);
+
+  // Reading Y7
+ digitalWrite(S1, HIGH);
+  valstore[6] = analogRead(OUT);
+
+  // Reading Y6
+  digitalWrite(S0, LOW);
+  valstore[7] = analogRead(OUT);
+
+  // Reading A0
+  valstore [8] = analogRead(A0);
+
+  // Reading A1
+  valstore [9] = analogRead(A1);
+  
+
+// Sensor A
+finalval[0] = -valstore[0] + valstore[5];
+
+// Sensor B
+finalval[1] = -valstore[8] + valstore[9];
+
+// Sensor C
+finalval[2] = -valstore[2] + valstore[6];
+
+// Sensor D
+finalval[3] = -valstore[4] + valstore[7];
+
+// Sensor E
+finalval[4] = -valstore[1] + valstore[3];
+
+    Serial.print(finalval[0]); 
+  Serial.print("\t");
+  Serial.print(finalval[1]);
+  Serial.print("\t");
+  Serial.print(finalval[2]);
+  Serial.print("\t");
+  Serial.print(finalval[3]);
+  Serial.print("\t");
+  Serial.print(finalval[4]);
+  Serial.print("\t");
+
+  Serial.println();
+  delay(50);
+}

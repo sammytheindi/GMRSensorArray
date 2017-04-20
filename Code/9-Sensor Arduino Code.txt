@@ -1,0 +1,141 @@
+// Set Variable Names
+int S0 = 7;
+int S1 = 6;
+int S2 = 4;
+int OUT = A11;
+int E = 5;
+int output;
+
+// Create array of size 4 to allow storage of values
+int valstore[18];
+int finalval[18];
+
+char receivedChar;
+boolean newData = false;
+
+void setup() {
+  // Initialize Pins
+  pinMode(OUT, INPUT);
+  pinMode(S0, OUTPUT);
+  pinMode(S1, OUTPUT);
+  pinMode(S2, OUTPUT);
+  pinMode(E, OUTPUT);
+  pinMode(A0, INPUT);
+  pinMode(A1, INPUT);
+  pinMode(A2, INPUT);
+  pinMode(A3, INPUT);
+  pinMode(A4, INPUT);
+  pinMode(A5, INPUT);
+  pinMode(A6, INPUT);
+  pinMode(A7, INPUT);
+  pinMode(A8, INPUT);
+  pinMode(A9, INPUT);
+  pinMode(A10, INPUT);
+  
+  // Set Baud Rate to 9600
+  Serial.begin(9600);
+}
+
+void loop() {
+  digitalWrite(E, HIGH);
+  digitalWrite(S0, LOW);
+  digitalWrite(S1, LOW);
+  digitalWrite(S2, LOW);
+
+  // Start of loop if button is being used, to fill in later
+
+  // Reading Y0 
+  digitalWrite(E, LOW);
+  valstore[0] = analogRead(OUT);
+
+  // Reading Y1
+  digitalWrite(S0, HIGH);
+  valstore[1] = analogRead(OUT);
+
+  // Reading Y3
+  digitalWrite(S1, HIGH);
+  valstore[3] = analogRead(OUT);
+
+  // Reading Y2
+  digitalWrite(S0, LOW);
+  valstore[2] = analogRead(OUT);
+
+  // Reading Y4
+  digitalWrite(S1, LOW);
+  digitalWrite(S2, HIGH);
+  valstore[4] = analogRead(OUT);
+
+  // Reading Y7
+ digitalWrite(S1, HIGH);
+ digitalWrite(S0, HIGH);
+  valstore[5] = analogRead(OUT);
+
+  // Reading Y6
+  digitalWrite(S0, LOW);
+  valstore[6] = analogRead(OUT);
+
+  // Reading A0
+  valstore [7] = analogRead(A0);
+
+  // Reading A1
+  valstore [8] = analogRead(A1);
+
+  // Reading A2
+  valstore [9] = analogRead(A2);  
+
+  // Reading A3
+  valstore [10] = analogRead(A3);
+
+  // Reading A4
+  valstore [11] = analogRead(A4);
+
+  // Reading A5
+  valstore [12] = analogRead(A5);
+
+  // Reading A6
+  valstore [13] = analogRead(A6);
+
+  // Reading A7
+  valstore [14] = analogRead(A7);
+
+  // Reading A8
+  valstore [15] = analogRead(A8);
+
+  // Reading A9
+  valstore [16] = analogRead(A9);
+
+  // Reading A10
+  valstore [17] = analogRead(A10);
+
+  finalval[0] = valstore[14]-valstore[15];
+  finalval[1] = valstore[4]-valstore[5];
+  finalval[2] = valstore[2]-valstore[1];
+  finalval[3] = valstore[16]-valstore[17];
+  finalval[4] = valstore[0]-640;
+  finalval[5] = valstore[7]-640;
+  finalval[6] = valstore[6]-valstore[13];
+  finalval[7] = valstore[11]-valstore[10];
+  finalval[8] = valstore[12]-valstore[8];
+
+  Serial.print(finalval[0]);
+  Serial.print("\t");
+  Serial.print(finalval[1]);
+  Serial.print("\t");
+  Serial.print(finalval[2]);
+  Serial.print("\t");
+  Serial.print(finalval[3]);
+  Serial.print("\t");
+  Serial.print(finalval[4]);
+  Serial.print("\t");
+  Serial.print(finalval[5]);
+  Serial.print("\t");
+  Serial.print(finalval[6]);
+  Serial.print("\t");
+  Serial.print(finalval[7]);
+  Serial.print("\t");
+  Serial.print(finalval[8]);
+  Serial.print("\t");
+  
+  Serial.println();
+  delay(50);
+}

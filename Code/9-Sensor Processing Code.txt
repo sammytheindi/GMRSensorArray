@@ -1,0 +1,638 @@
+PFont font;
+int num = 0;
+float[] val = new float[9];
+int sensnum = 9;
+char sensKey = 'q';
+int imax = 40; // This sets the amount of samples that will be taken
+int sdelay = 50; // This refers to the delay between readings. Should be larger than the time it takes to refresh serial 
+float[][] calibArray =new float[sensnum][imax];
+float[][] baseArray = new float[sensnum][imax];
+float[] maxval = new float[sensnum];
+float[] minval = new float[sensnum];
+float[] avgval = new float[sensnum];
+ArrayList<bar> bargraph = new ArrayList<bar>();
+int count;
+int i = 0;
+
+float[] xpos = {-181.16, 0, 181.16, -181.16, 0, 181.16, -181.16, 0, 181.16};
+float[] ypos = {181.16, 181.16, 181.16, 0, 0, 0, -181.16, -181.16, -181.16};
+
+float locxpos = 0;
+float locypos = 0;
+
+import processing.serial.*;
+Serial myPort;
+
+rect sensorA;
+rect sensorB;
+rect sensorC;
+rect sensorD;
+rect sensorE;
+rect sensorF;
+rect sensorG;
+rect sensorH;
+rect sensorI;
+
+//----------------------------------------------------
+
+void setup() {
+       size(1920, 1080);
+       background(0,0,0);
+       font = createFont("Arial", 50);
+       textFont(font);
+       println(Serial.list());
+       String portName = Serial.list()[0];
+       myPort = new Serial(this, portName, 9600);
+       
+       for(int i = 0; i < sensnum; i++) {
+         bargraph.add(new bar());
+         
+       sensorA = new rect(778.84, 358.84, 103.52, 155.28);
+       sensorB = new rect(960, 358.84, 103.52, 155.28);
+       sensorC = new rect(1141.16, 358.84, 103.52, 155.28);
+       sensorD = new rect(778.84, 540, 103.52, 155.28);
+       sensorE = new rect(960, 540, 103.52, 155.28);
+       sensorF = new rect(1141.16, 540, 103.52, 155.28);
+       sensorG = new rect(778.84, 721.16, 103.52, 155.28);
+       sensorH = new rect(960, 721.16, 103.52, 155.28);
+       sensorI = new rect(1141.16, 721.16, 103.52, 155.28);
+       }
+       
+     }
+   
+// ------------------------------------------------------------------------
+void serialEvent(Serial myPort) 
+{ 
+  try{
+  // read the serial buffer:
+  String myString = myPort.readStringUntil(10);
+ 
+  // if we get any bytes other than the linefeed:
+  if (myString != null) 
+  {
+    // remove the linefeed
+    myString = trim(myString);
+ 
+    // split the string at the tabs and convert the sections into integers:
+    int mysensors[] = int(split(myString, '\t'));
+    count = mysensors.length;
+ 
+    for (int i=0; i<count; i++)
+    {
+      // set sensor[i] value for use in draw()
+      val[i] = mysensors[i];
+      
+      // print out the values we got:
+      print(i + ": " + val[i] + "\t");
+    }
+    println();
+  } }
+  catch(RuntimeException e) {
+    e.printStackTrace();
+  }
+}
+
+//-------------------------------------------------------------------
+
+void keyPressed(){
+  sensKey = key;
+  int keyNum = Character.getNumericValue(key);
+  if(keyNum <= 9 && keyNum >= 0) {
+    num = keyNum;
+  }
+}
+
+//--------------------------------------------------------------------
+      
+     void draw() {
+       background(0,0,0);
+       fill(255);
+       text("Press 1 for Calibration", width/3, height/2 - 50);
+       text("Press 2 for Localization", width/3, height/2 + 50);
+
+////////////////////// LOCALIZATION CODE ///////////////////////////
+       if(num == 2){
+       background(0,0,0);
+       int total = bargraph.size();
+        
+        for(int i = 0; i < sensnum; i++) {
+        bargraph.get(i).seth(((1080-0)*(val[i]-0))/(105-0));
+        bargraph.get(i).setpos(i);
+        bargraph.get(i).display();
+        }
+        
+        sensorA.display();
+        sensorB.display();
+        sensorC.display();
+        sensorD.display();
+        sensorE.display();
+        sensorF.display();
+        sensorG.display();
+        sensorH.display();
+        sensorI.display();
+        
+        locxpos = 0;
+        locypos = 0;
+        
+        for(int n = 0; n < sensnum; n++){
+        locxpos = (val[n]/maxval[n])*xpos[n] + locxpos;
+        }
+        
+         for(int n = 0; n < sensnum; n++){
+        locypos = (val[n]/maxval[n])*ypos[n] + locypos;
+        }
+        
+        ellipseMode(CENTER);  // Set ellipseMode to CENTER
+        fill(100);  // Set fill to gray
+        ellipse(width/2+locxpos, height/2-locypos, 30, 30);  // Draw gray ellipse using CENTER mode
+        
+        float locxdiff = 0;
+        float locydiff = 0;
+        
+        for(int n = 0; n < sensnum; n++){
+        locxdiff = ((val[n]-minval[n])/(maxval[n]-minval[n]))*xpos[n] + locxdiff;
+        }
+        
+         for(int n = 0; n < sensnum; n++){
+        locydiff = ((val[n]-minval[n])/(maxval[n]-minval[n]))*ypos[n] + locydiff;
+        }
+        
+        ellipseMode(CENTER);  // Set ellipseMode to CENTER
+        fill(255);  // Set fill to gray
+        ellipse(width/2+locxdiff, height/2-locydiff, 30, 30);  // Draw white ellipse using CENTER mode
+       }
+
+////////////////////// CALIBRATION CODE ////////////////////////////
+       if(num == 1){
+         background(0,0,0);
+         text("Select a sensor from A to E", width/3, height/2 - 50);
+         text("Press 0 to return to menu", width/3, height/2 + 50);
+         
+         if(sensKey == 'a'){
+           if(i < imax) {
+             calibArray[0][i] = val[0];
+             i++;
+             print(calibArray[0][0] + "/t" + calibArray[0][1] + "/t" + calibArray[0][2] + "/t" + calibArray[0][3] + "/t" + calibArray[0][4]);
+             background(255,0,0);
+           } 
+           
+            if (i >=imax && i<2*imax){
+             baseArray[0][i-imax] = val[0];
+             i++;
+             print(baseArray[0][0] + "/t" + baseArray[0][1] + "/t" + baseArray[0][2] + "/t" + baseArray[0][3] + "/t" + baseArray[0][4]);
+             background(0,0,255);
+            }
+           
+           if (i==2*imax) {
+             i = 0;
+             sensKey = 'q';
+             background(0,255,0);
+              
+             float sum = 0;
+             for(int j=0; j < calibArray[0].length ; j++)
+             sum = sum + calibArray[0][j];
+               
+                //calculate average value
+             avgval[0] = sum / calibArray[0].length;
+             
+                // Calculate max value
+                maxval[0] = calibArray[0][0];
+                for (int j = 1; j < calibArray[0].length; j++) {
+                  if (calibArray[0][j] > maxval[0]) {
+                maxval[0] = calibArray[0][j];
+                  }
+                }
+                
+                // Calculate min value
+                minval[0] = baseArray[0][0];
+                for (int j = 1; j < baseArray[0].length; j++) {
+                  if (baseArray[0][j] < minval[0]) {
+                minval[0] = baseArray[0][j];
+                  }
+                }
+           } 
+         }
+         
+         if(sensKey == 'b'){
+          if(i < imax) {
+             calibArray[1][i] = val[1];
+             i++;
+             print(calibArray[1][0] + "/t" + calibArray[1][1] + "/t" + calibArray[1][2] + "/t" + calibArray[1][3] + "/t" + calibArray[1][4]);
+             background(255,0,0);
+           } 
+           
+            if (i >=imax && i<2*imax){
+             baseArray[1][i-imax] = val[1];
+             i++;
+             print(baseArray[1][0] + "/t" + baseArray[1][1] + "/t" + baseArray[1][2] + "/t" + baseArray[1][3] + "/t" + baseArray[1][4]);
+             background(0,0,255);
+            }
+           
+           if (i==2*imax) {
+             i = 0;
+             sensKey = 'q';
+             background(0,255,0);
+             
+             float sum = 0;
+             for(int j=0; j < calibArray[1].length ; j++)
+             sum = sum + calibArray[1][j];
+               
+                //calculate average value
+             avgval[1] = sum / calibArray[1].length;
+             
+             // Calculate max value
+                maxval[1] = calibArray[1][0];
+                for (int j = 1; j < calibArray[1].length; j++) {
+                  if (calibArray[1][j] > maxval[1]) {
+                maxval[1] = calibArray[1][j];
+                  }
+                }
+                
+                // Calculate min value
+                minval[1] = baseArray[1][0];
+                for (int j = 1; j < baseArray[1].length; j++) {
+                  if (baseArray[1][j] < minval[1]) {
+                minval[1] = baseArray[1][j];
+           } 
+         }
+        } 
+         }
+         
+         if(sensKey == 'c'){
+           if(i < imax) {
+             calibArray[2][i] = val[2];
+             i++;
+             print(calibArray[2][0] + "/t" + calibArray[2][1] + "/t" + calibArray[2][2] + "/t" + calibArray[2][3] + "/t" + calibArray[2][4]);
+             background(255,0,0);
+           } 
+           
+            if (i >=imax && i<2*imax){
+             baseArray[2][i-imax] = val[2];
+             i++;
+             print(baseArray[2][0] + "/t" + baseArray[2][1] + "/t" + baseArray[2][2] + "/t" + baseArray[2][3] + "/t" + baseArray[2][4]);
+             background(0,0,255);
+            }
+           
+           if (i==2*imax) {
+             i = 0;
+             sensKey = 'q';
+             background(0,255,0);
+             
+             float sum = 0;
+             for(int j=0; j < calibArray[2].length ; j++)
+             sum = sum + calibArray[2][j];
+               
+                //calculate average value
+             avgval[2] = sum / calibArray[2].length;
+             
+             // Calculate max value
+                maxval[2] = calibArray[2][0];
+                for (int j = 1; j < calibArray[2].length; j++) {
+                  if (calibArray[2][j] > maxval[2]) {
+                maxval[2] = calibArray[2][j];
+                }
+                }
+                
+                // Calculate min value
+                minval[2] = baseArray[2][0];
+                for (int j = 1; j < baseArray[2].length; j++) {
+                  if (baseArray[2][j] < minval[2]) {
+                minval[2] = baseArray[2][j];
+           } 
+         }
+         } 
+         }
+         
+         if(sensKey == 'd'){
+           if(i < imax) {
+             calibArray[3][i] = val[3];
+             i++;
+             print(calibArray[3][0] + "/t" + calibArray[3][1] + "/t" + calibArray[3][2] + "/t" + calibArray[3][3] + "/t" + calibArray[3][4]);
+             background(255,0,0);
+           } 
+           
+            if (i >=imax && i<2*imax){
+             baseArray[3][i-imax] = val[3];
+             i++;
+             print(baseArray[3][0] + "/t" + baseArray[3][1] + "/t" + baseArray[3][2] + "/t" + baseArray[3][3] + "/t" + baseArray[3][4]);
+             background(0,0,255);
+            }
+           
+           if (i==2*imax) {
+             i = 0;
+             sensKey = 'q';
+             background(0,255,0);
+             
+             float sum = 0;
+             for(int j=0; j < calibArray[3].length ; j++)
+             sum = sum + calibArray[3][j];
+               
+                //calculate average value
+             avgval[3] = sum / calibArray[3].length;
+             
+             // Calculate max value
+                maxval[3] = calibArray[3][0];
+                for (int j = 1; j < calibArray[3].length; j++) {
+                  if (calibArray[3][j] > maxval[3]) {
+                maxval[3] = calibArray[3][j];
+                }
+                }
+                // Calculate min value
+                minval[3] = baseArray[3][0];
+                for (int j = 1; j < baseArray[3].length; j++) {
+                  if (baseArray[3][j] < minval[3]) {
+                minval[3] = baseArray[3][j];
+           } 
+         }
+         } 
+         }
+         
+         if(sensKey == 'e'){
+           if(i < imax) {
+             calibArray[4][i] = val[4];
+             i++;
+             print(calibArray[4][0] + "/t" + calibArray[4][1] + "/t" + calibArray[4][2] + "/t" + calibArray[4][3] + "/t" + calibArray[4][4]);
+             background(255,0,0);
+           } 
+           
+            if (i >=imax && i<2*imax){
+             baseArray[4][i-imax] = val[4];
+             i++;
+             print(baseArray[4][0] + "/t" + baseArray[4][1] + "/t" + baseArray[4][2] + "/t" + baseArray[4][3] + "/t" + baseArray[4][4]);
+             background(0,0,255);
+            }
+           
+           if (i==2*imax) {
+             i = 0;
+             sensKey = 'q';
+             background(0,255,0);
+             
+             float sum = 0;
+             for(int j=0; j < calibArray[4].length ; j++)
+             sum = sum + calibArray[4][j];
+               
+                //calculate average value
+             avgval[4] = sum / calibArray[4].length;
+             
+             // Calculate max value
+                maxval[4] = calibArray[4][0];
+                for (int j = 1; j < calibArray[4].length; j++) {
+                  if (calibArray[4][j] > maxval[4]) {
+                maxval[4] = calibArray[4][j];
+                }
+                }
+                
+                // Calculate min value
+                minval[4] = baseArray[4][0];
+                for (int j = 1; j < baseArray[4].length; j++) {
+                  if (baseArray[4][j] < minval[4]) {
+                minval[4] = baseArray[4][j];
+           } 
+         }
+         } 
+         }
+         
+         if(sensKey == 'f'){
+           if(i < imax) {
+             calibArray[5][i] = val[5];
+             i++;
+             print(calibArray[5][0] + "/t" + calibArray[5][1] + "/t" + calibArray[5][2] + "/t" + calibArray[5][3] + "/t" + calibArray[5][4]);
+             background(255,0,0);
+           } 
+           
+            if (i >=imax && i<2*imax){
+             baseArray[5][i-imax] = val[5];
+             i++;
+             print(baseArray[5][0] + "/t" + baseArray[5][1] + "/t" + baseArray[5][2] + "/t" + baseArray[5][3] + "/t" + baseArray[5][4]);
+             background(0,0,255);
+            }
+           
+           if (i==2*imax) {
+             i = 0;
+             sensKey = 'q';
+             background(0,255,0);
+              
+             float sum = 0;
+             for(int j=0; j < calibArray[5].length ; j++)
+             sum = sum + calibArray[5][j];
+               
+                //calculate average value
+             avgval[5] = sum / calibArray[5].length;
+             
+                // Calculate max value
+                maxval[5] = calibArray[5][0];
+                for (int j = 1; j < calibArray[5].length; j++) {
+                  if (calibArray[5][j] > maxval[5]) {
+                maxval[5] = calibArray[5][j];
+                  }
+                }
+                
+                // Calculate min value
+                minval[5] = baseArray[5][0];
+                for (int j = 1; j < baseArray[5].length; j++) {
+                  if (baseArray[5][j] < minval[5]) {
+                minval[5] = baseArray[5][j];
+                  }
+                }
+           } 
+         }
+         
+         if(sensKey == 'g'){
+          if(i < imax) {
+             calibArray[6][i] = val[6];
+             i++;
+             print(calibArray[6][0] + "/t" + calibArray[6][1] + "/t" + calibArray[6][2] + "/t" + calibArray[6][3] + "/t" + calibArray[6][4]);
+             background(255,0,0);
+           } 
+           
+            if (i >=imax && i<2*imax){
+             baseArray[6][i-imax] = val[6];
+             i++;
+             print(baseArray[6][0] + "/t" + baseArray[6][1] + "/t" + baseArray[6][2] + "/t" + baseArray[6][3] + "/t" + baseArray[6][4]);
+             background(0,0,255);
+            }
+           
+           if (i==2*imax) {
+             i = 0;
+             sensKey = 'q';
+             background(0,255,0);
+             
+             float sum = 0;
+             for(int j=0; j < calibArray[6].length ; j++)
+             sum = sum + calibArray[6][j];
+               
+                //calculate average value
+             avgval[6] = sum / calibArray[6].length;
+             
+             // Calculate max value
+                maxval[6] = calibArray[6][0];
+                for (int j = 1; j < calibArray[6].length; j++) {
+                  if (calibArray[6][j] > maxval[6]) {
+                maxval[6] = calibArray[6][j];
+                  }
+                }
+                
+                // Calculate min value
+                minval[6] = baseArray[6][0];
+                for (int j = 1; j < baseArray[6].length; j++) {
+                  if (baseArray[6][j] < minval[6]) {
+                minval[6] = baseArray[6][j];
+           } 
+         }
+        } 
+         }
+         
+         if(sensKey == 'h'){
+           if(i < imax) {
+             calibArray[7][i] = val[7];
+             i++;
+             print(calibArray[7][0] + "/t" + calibArray[7][1] + "/t" + calibArray[7][2] + "/t" + calibArray[7][3] + "/t" + calibArray[7][4]);
+             background(255,0,0);
+           } 
+           
+            if (i >=imax && i<2*imax){
+             baseArray[7][i-imax] = val[7];
+             i++;
+             print(baseArray[7][0] + "/t" + baseArray[7][1] + "/t" + baseArray[7][2] + "/t" + baseArray[7][3] + "/t" + baseArray[7][4]);
+             background(0,0,255);
+            }
+           
+           if (i==2*imax) {
+             i = 0;
+             sensKey = 'q';
+             background(0,255,0);
+             
+             float sum = 0;
+             for(int j=0; j < calibArray[7].length ; j++)
+             sum = sum + calibArray[7][j];
+               
+                //calculate average value
+             avgval[7] = sum / calibArray[7].length;
+             
+             // Calculate max value
+                maxval[7] = calibArray[7][0];
+                for (int j = 1; j < calibArray[7].length; j++) {
+                  if (calibArray[7][j] > maxval[7]) {
+                maxval[7] = calibArray[7][j];
+                }
+                }
+                
+                // Calculate min value
+                minval[7] = baseArray[7][0];
+                for (int j = 1; j < baseArray[7].length; j++) {
+                  if (baseArray[7][j] < minval[7]) {
+                minval[7] = baseArray[7][j];
+           } 
+         }
+         } 
+         }
+         
+         if(sensKey == 'i'){
+           if(i < imax) {
+             calibArray[8][i] = val[8];
+             i++;
+             print(calibArray[8][0] + "/t" + calibArray[8][1] + "/t" + calibArray[8][2] + "/t" + calibArray[8][3] + "/t" + calibArray[8][4]);
+             background(255,0,0);
+           } 
+           
+            if (i >=imax && i<2*imax){
+             baseArray[8][i-imax] = val[8];
+             i++;
+             print(baseArray[8][0] + "/t" + baseArray[8][1] + "/t" + baseArray[8][2] + "/t" + baseArray[8][3] + "/t" + baseArray[8][4]);
+             background(0,0,255);
+            }
+           
+           if (i==2*imax) {
+             i = 0;
+             sensKey = 'q';
+             background(0,255,0);
+             
+             float sum = 0;
+             for(int j=0; j < calibArray[8].length ; j++)
+             sum = sum + calibArray[8][j];
+               
+                //calculate average value
+             avgval[8] = sum / calibArray[8].length;
+             
+             // Calculate max value
+                maxval[8] = calibArray[8][0];
+                for (int j = 1; j < calibArray[8].length; j++) {
+                  if (calibArray[8][j] > maxval[8]) {
+                maxval[8] = calibArray[8][j];
+                }
+                }
+                // Calculate min value
+                minval[8] = baseArray[8][0];
+                for (int j = 1; j < baseArray[8].length; j++) {
+                  if (baseArray[8][j] < minval[8]) {
+                minval[8] = baseArray[8][j];
+           } 
+         }
+         } 
+         }
+         
+         // This delay is necessary to make sure that the buffer fills up again before the next value is read.
+         delay(sdelay);
+       }
+       
+   
+     }
+
+// -----------------------------------------------------------
+     
+// create a class for the bar graphs
+class bar {
+  color c;
+  float h;
+  float pos;
+  
+bar() {
+  c = color(255,255,255);
+  h = 0;
+  pos = 0; // This is the sensor number, from 0 to 9.
+}
+
+void display() {
+  stroke(0);
+  fill(c);
+  rectMode(CORNER);
+  rect((width/sensnum)*pos, height-h, width/sensnum, h);
+}
+
+void setc(color c) {
+  this.c = c;
+}
+
+void seth(float h) {
+  this.h = h;
+}
+
+void setpos(float pos) {
+  this.pos = pos;
+  }
+}
+
+//Object class for sensor rectangles
+class rect { 
+  color c;
+  float xpos;
+  float ypos;
+  float len;
+  float wid;
+
+  // The Constructor is defined with arguments.
+  rect(float tempXpos, float tempYpos, float tempwid, float templen) { 
+    c = color(255,0,0);
+    xpos = tempXpos;
+    ypos = tempYpos;
+    len = templen;
+    wid = tempwid;
+  }
+
+  void display() {
+    stroke(0);
+    fill(c);
+    rectMode(CENTER);
+    rect(xpos,ypos,wid,len);
+  }
+}
